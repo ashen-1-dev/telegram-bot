@@ -27,8 +27,21 @@
         ]
     ];
     $encodedKeyboard = json_encode($keyboard);
+    $commandAndArguments = parseCommand($msg);
 
-    if($msg)
+    if($commandAndArguments[0] == 'расписание' && count($commandAndArguments) === 3) {
+        $timetable = getTimetable($commandAndArguments[1], $commandAndArguments[2]);
+        $method = 'sendMessage';
+        $data = [
+            'text' => showTimetable($timetable),
+            'chat_id' => $chat_id,
+        ];
+        sendMethod($method, $data);
+        exit;
+    }
+
+    
+
 	switch($msg) {
         case "/start":
             $first_name = $update['message']['from']['first_name'];
@@ -52,7 +65,7 @@
             $method = 'sendMessage';
             $data = [
                 'text' => "Пожалуйста, отправь сообщением название факультета и номер группы в следующем формате:
-                \r\n<факультет> <номер группы>\n\nДоступны следующие факультеты:\n\n" . showFaculties(),
+                \r\n/расписание <факультет> <номер группы>\n\nДоступны следующие факультеты:\n\n" . showFaculties(),
             ];
             break;
 
@@ -63,6 +76,7 @@
         case "/кнопки":
             $method = 'sendMessage';
             $data = [
+                'text' => 'Лови',
                 'reply_markup' => $encodedKeyboard,   
             ];
             break;
@@ -112,6 +126,26 @@
             $output .= $name . ' - ' . $description . "\n";
         }
         return $output;
+    }
+
+    function parseCommand($msg) {
+        if(strpos($msg, '/') !== 0)
+            return false;
+        $commandAndArguments = explode(' ', str_replace('/', '', $msg));
+
+        return $commandAndArguments;
+    }
+
+    function debug($debug, $chat_id) 
+    {
+        sendMethod('sendMessage', ['chat_id' => $chat_id, 'text' => count($debug)]);
+        die();
+    }
+
+    function showTimetable($timetable) 
+    {
+        
+        return json_encode($timetable[1]);
     }
 
 ?>

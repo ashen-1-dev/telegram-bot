@@ -2,18 +2,19 @@
     const url = "https://timetable.tusur.ru/";
     const lesson_attributes = [1 => 'discipline', 2 => 'kind', 3 => 'auditoriums', 4 => 'group', 5 => 'remote'];
 
-    function getTimetable($group, $faculties) {
+
+    function getTimetable($faculties, $group) {
         $timetable = [];
         $dom = new DOMDocument();
-        $current_url = url . "faculties/" . $faculties . "/groups/" . $group;
+        $current_url = url . "faculties/" . $faculties . "/groups/" . $group . '?week_id=605';
         if(!$dom->loadHTMLFile($current_url))
             return null;
         $xpath = new DomXPath($dom);
 
         for($day = 1; $day < 7; $day++) {
-            $date_query = "//div[@class='timetable_wrapper']//table//thead//tr//th[" . $day + 1  . "]";
+            $date_query = "//div[@class='timetable_wrapper']//table//thead//tr//th";
             $date_node = $xpath->query($date_query);
-            $timetable[$day]['date'] = $date_node[0]->nodeValue;
+            $timetable[$day]['date'] = str_replace(array("\n", '   '), '', $date_node[$day]->nodeValue);
     
             for($lesson = 1; $lesson < 8; $lesson++) {
                 $lesson_query = "//table[2]//tr[@class='lesson_{$lesson}']//td[contains(@class, 'day_{$day}')]//div[@class='hidden for_print']//span";
@@ -28,9 +29,8 @@
             if(count($timetable[$day]) <= 1)
                 $timetable[$day][1] = 'Можешь расслабиться, сегодня пар нет.';
         }
-        print("<pre>".print_r($timetable,true)."</pre>");
-    
+        return $timetable;
     }
 
-    getTimetable('599-1', 'fvs');
+    echo strlen(json_encode(getTimetable('fvs', '599-1')));
 ?>
