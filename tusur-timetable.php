@@ -1,12 +1,11 @@
 <?php
     const url = "https://timetable.tusur.ru/";
     const lesson_attributes = [1 => 'discipline', 2 => 'kind', 3 => 'auditoriums', 4 => 'group', 5 => 'remote'];
-
-
-    function getTimetable($faculties, $group) {
+    
+    function getWeekTimetable($faculties, $group) {
         $timetable = [];
         $dom = new DOMDocument();
-        $current_url = url . "faculties/" . $faculties . "/groups/" . $group . '?week_id=605';
+        $current_url = url . "faculties/" . $faculties . "/groups/" . $group;
         if(!$dom->loadHTMLFile($current_url))
             return null;
         $xpath = new DomXPath($dom);
@@ -26,11 +25,9 @@
                     $i++;
                 }
             }
-            if(count($timetable[$day]) <= 1)
-                $timetable[$day][1] = 'Можешь расслабиться, сегодня пар нет.';
+            
         }
         return $timetable;
     }
 
-    echo strlen(json_encode(getTimetable('fvs', '599-1')));
 ?>

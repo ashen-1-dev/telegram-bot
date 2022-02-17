@@ -7,9 +7,11 @@
                        'fsu' => 'Факультет систем управления', 'fet' => 'Факультет электронной техники', 'fit' => 'Факультет инновационных технологий', 'ef' => 'Экономический факультет',
                        'gf' => 'Гуманитарный факультет', 'yuf' => 'Юридический факультет', 'fb' => 'Факультет безопасности',
                         'zivf' => 'Заочный и вечерний факультет', 'aspirantura' => 'Аспирантура'];
+    const week_days = ['пн' => 1, 'вт' => 2, 'ср' => 3, 'чт' => 4, 'пт' => 5, 'сб' => 6];
     require_once 'tusur-timetable.php';
-    
-    $update = json_decode(file_get_contents('php://input'), JSON_OBJECT_AS_ARRAY);
+    $stream = file_get_contents('php://input');
+    $update = json_decode($stream, JSON_OBJECT_AS_ARRAY);
+    file_put_contents('telegram-logs.txt', $stream, FILE_APPEND);
 	$chat_id = $update['message']['chat']['id'];
 	$msg = strtolower($update['message']['text']);
 	$keyboard = [
@@ -29,11 +31,11 @@
     $encodedKeyboard = json_encode($keyboard);
     $commandAndArguments = parseCommand($msg);
 
-    if($commandAndArguments[0] == 'расписание' && count($commandAndArguments) === 3) {
-        $timetable = getTimetable($commandAndArguments[1], $commandAndArguments[2]);
+    if($commandAndArguments[0] == 'расписание' && count($commandAndArguments) === 4) {
+        $timetable = getWeekTimetable($commandAndArguments[1], $commandAndArguments[2]);
         $method = 'sendMessage';
         $data = [
-            'text' => showTimetable($timetable),
+            'text' => showTimetable($timetable, $commandAndArguments[3]),
             'chat_id' => $chat_id,
         ];
         sendMethod($method, $data);
@@ -65,7 +67,8 @@
             $method = 'sendMessage';
             $data = [
                 'text' => "Пожалуйста, отправь сообщением название факультета и номер группы в следующем формате:
-                \r\n/расписание <факультет> <номер группы>\n\nДоступны следующие факультеты:\n\n" . showFaculties(),
+                \r\n/расписание <факультет> <номер группы> <день недели>\n\nНапример: /расписание fvs 599-1 пн
+                \r\nДоступны следующие факультеты:\n\n" . showFaculties(),
             ];
             break;
 
@@ -142,10 +145,40 @@
         die();
     }
 
-    function showTimetable($timetable) 
+    function showTimetable($timetable, $day) 
     {
+        $day_id = week_days[$day];
+        $output =  hex2bin('e29d97') . 'Твое расписание на ' . $timetable[$day_id]['date'] . "\n\n";
         
-        return json_encode($timetable[1]);
+        if(count($timetable[$day_id]) <= 1)
+                return 'Можешь расслабиться, на этот день пар нет.';
+
+        for($lesson = 1; $lesson < 8; $lesson++) {
+            $curr_lesson = $timetable[$day_id][$lesson];
+
+            if(!empty($curr_lesson)) {
+                $output .=  hex2bin('e29e96') . $curr_lesson['discipline'] . "\n" . 
+                            $curr_lesson['kind'] . "\n"; 
+
+                if($curr_lesson['remote'] != null)
+                    $output .= mb_strtolower($curr_lesson['remote'] . "\n\n", 'UTF-8'); 
+                else 
+                    $output .= $curr_lesson['auditoriums'] . "\n\n";
+            }                           
+        }
+        return $output;
     }
 
+
+    function telegram_emoji($utf8emoji) {
+        preg_replace_callback(
+            '@\\\x([0-9a-fA-F]{2})@x',
+            function ($captures) {
+                return chr(hexdec($captures[1]));
+            },
+            $utf8emoji
+        );
+    
+        return $utf8emoji;
+    }
 ?>
