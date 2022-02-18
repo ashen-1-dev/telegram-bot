@@ -9,6 +9,7 @@
                         'zivf' => 'Заочный и вечерний факультет', 'aspirantura' => 'Аспирантура'];
     const week_days = ['пн' => 1, 'вт' => 2, 'ср' => 3, 'чт' => 4, 'пт' => 5, 'сб' => 6];
     require_once 'tusur-timetable.php';
+    require_once 'tusur-news.php';
     $stream = file_get_contents('php://input');
     $update = json_decode($stream, JSON_OBJECT_AS_ARRAY);
     file_put_contents('telegram-logs.txt', $stream, FILE_APPEND);
@@ -74,6 +75,12 @@
 
         case "/новости":
         case "Показать новости":
+            $method = 'sendMessage';
+            $data = [
+                'text' => getLatestNews(),
+                'disable_web_page_preview' => false,
+                'parse_mode' => 'HTML',
+            ];
             break;
 
         case "/кнопки":
@@ -167,18 +174,5 @@
             }                           
         }
         return $output;
-    }
-
-
-    function telegram_emoji($utf8emoji) {
-        preg_replace_callback(
-            '@\\\x([0-9a-fA-F]{2})@x',
-            function ($captures) {
-                return chr(hexdec($captures[1]));
-            },
-            $utf8emoji
-        );
-    
-        return $utf8emoji;
     }
 ?>
