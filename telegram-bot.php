@@ -12,7 +12,7 @@
     require_once 'tusur-news.php';
     $stream = file_get_contents('php://input');
     $update = json_decode($stream, JSON_OBJECT_AS_ARRAY);
-    file_put_contents('telegram-logs.txt', $stream, FILE_APPEND);
+    file_put_contents('telegram-logs.txt', print_r($update, 1), FILE_APPEND);
 	$chat_id = $update['message']['chat']['id'];
 	$msg = strtolower($update['message']['text']);
 	$keyboard = [
